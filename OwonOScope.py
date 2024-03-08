@@ -19,6 +19,11 @@ HEADER_10k = 578
 PAYLOAD_10k = 8500
 
 
+# And again when there are 2 channels
+DUAL_HEADER_1k_ch1 = 262
+DUAL_HEADER_1k_ch2 = 199
+
+
 DISPLAY_SIZE = 8500  # How much to display on the graph
 
 # The 4 different lengths (1 channel 1k.10k, 2 channel 1k,10k)
@@ -75,6 +80,13 @@ def parse_data(data: List) -> [Iterable, Tuple]:
         case 2184:
             ch1_enb = True
             ch2_enb = True
+            ch1_data = data[DUAL_HEADER_1k_ch1:DUAL_HEADER_1k_ch1 + PAYLOAD_1k]
+            ch1_data = convert_1_to_10(ch1_data)[:DISPLAY_SIZE]
+            # Get the second half
+            ch2_data = data[DATA_LENGTH[0]:]
+            ch2_data = ch2_data[DUAL_HEADER_1k_ch2:DUAL_HEADER_1k_ch2 + PAYLOAD_1k]
+            ch2_data = convert_1_to_10(ch2_data)[:DISPLAY_SIZE]
+
         case 20184:
             ch1_enb = True
             ch2_enb = True
