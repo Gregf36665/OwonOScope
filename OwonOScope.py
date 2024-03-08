@@ -8,9 +8,15 @@ import matplotlib.pyplot as plt
 
 # For some reason there is noise at the start of the waveform
 # It's probably a header that needs to be decoded
-START = 250
-SAMPLES = 1125-START
+HEADER_1k = 228
+PAYLOAD_1k = 850
 
+# Of course the header changes length for 10k
+HEADER_10k = 578
+PAYLOAD_10k = 8500
+
+
+DISPLAY_SIZE = 8500  # How much to display on the graph
 
 # The 4 different lengths (1 channel 1k.10k, 2 channel 1k,10k)
 DATA_LENGTH = (1125, 10125, 2184, 21084)
@@ -30,25 +36,49 @@ def getConfig() -> Tuple[str, int]:
     return host, port
 
 
+def convert_1_to_10(data: Iterable) -> List:
+    """
+    Converd 1k data to 10k data.
+    This assumes that the header has been removed
+    :param data:
+    :return: The data bulked out
+    """
+    data_out = []
+    for idx, d in enumerate(data):
+        data_out[idx * 10: idx * 10 + 9] = [d] * 10
+    return data_out
+
+
 def parse_data(data: List) -> [Iterable, Tuple]:
     """
     Parse the raw data into 2 channels
     :param data: The raw stream of data, should be DATA_LENGTH long
     :return: Tuple(Tuple[Ch1 data, Ch2 data], Tuple[Ch1 enabled, Ch2 enabled])
     """
+    # Set defaults for all parameters
+    ch1_data = [0] * DISPLAY_SIZE
+    ch2_data = [0] * DISPLAY_SIZE
+    ch1_enb = False
+    ch2_enb = False
+
     match len(data):
         case 1125:
-            print("One Channel 1k")
+            ch1_enb = True
+            data = data[HEADER_1k:HEADER_1k + PAYLOAD_1k]
+            ch1_data = convert_1_to_10(data)[:DISPLAY_SIZE]
         case 10125:
-            print("One Channel 10k")
+            ch1_data = data[HEADER_10k:HEADER_10k + PAYLOAD_10k]
+            ch1_enb = True
         case 2184:
-            print("Two channel 1k")
+            ch1_enb = True
+            ch2_enb = True
         case 20184:
-            print("Two channel 10k")
+            ch1_enb = True
+            ch2_enb = True
         case _:
             raise ValueError(f"Data is {len(data)} bytes long. It should be one of {DATA_LENGTH}")
 
-    return ([0] * SAMPLES, [50] * SAMPLES), (True, True)
+    return (ch1_data, ch2_data), (ch1_enb, ch2_enb)
     pass
 
 
@@ -64,9 +94,10 @@ def main():
         s.settimeout(0.2)
         plt.ion()
 
-        timescale = [*range(SAMPLES)]
-        voltage1 = [0]*SAMPLES
-        voltage2 = [0]*SAMPLES
+        # Set the defaults for the graph
+        timescale = [*range(DISPLAY_SIZE)]
+        voltage1 = [0] * DISPLAY_SIZE
+        voltage2 = [0] * DISPLAY_SIZE
 
         # Set some values to get the y-axis scaled correctly
         voltage1[0] = 127
