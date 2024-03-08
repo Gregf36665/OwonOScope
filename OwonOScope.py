@@ -5,13 +5,13 @@ from tkinter import simpledialog
 
 import matplotlib.pyplot as plt
 
-START = 150
-SAMPLES = 850
-OFFSET = 100
+# For some reason there is noise at the start of the waveform
+START = 250
+SAMPLES = 1125-START
 
 
-DATA_LENGTH = 1024
-HEADER_LENGTH = 136
+# The 4 different lengths (1 channel 1k.10k, 2 channel 1k,10k)
+DATA_LENGTH = (1125, 10125, 2184, 21084)
 
 
 def getConfig() -> Tuple[str, int]:
@@ -32,7 +32,7 @@ def main():
     host, port = getConfig()
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((host, port))
-        s.settimeout(0.1)
+        s.settimeout(0.2)
         plt.ion()
 
         timescale = [*range(SAMPLES)]
@@ -60,9 +60,6 @@ def main():
                     break
 
             print(len(data))
-            if len(data) > 1024:
-                # For some reason data
-                data = data[OFFSET:1024+OFFSET]
             data = data[START:START+SAMPLES]
             if not plt.fignum_exists(fig.number):
                 break
