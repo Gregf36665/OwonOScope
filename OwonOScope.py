@@ -7,7 +7,7 @@ import matplotlib.axes._axes
 import matplotlib.pyplot as plt
 
 
-__VERSION__ = "0.0.1"
+__VERSION__ = "1.0.0"
 
 # For some reason there is noise at the start of the waveform
 # It's probably a header that needs to be decoded
@@ -23,6 +23,8 @@ PAYLOAD_10k = 8500
 DUAL_HEADER_1k_ch1 = 262
 DUAL_HEADER_1k_ch2 = 199
 
+DUAL_HEADER_10k_ch1 = 350
+DUAL_HEADER_10k_ch2 = 285
 
 DISPLAY_SIZE = 8500  # How much to display on the graph
 
@@ -80,6 +82,7 @@ def parse_data(data: List) -> [Iterable, Tuple]:
         case 2184:
             ch1_enb = True
             ch2_enb = True
+            # Get the first half
             ch1_data = data[DUAL_HEADER_1k_ch1:DUAL_HEADER_1k_ch1 + PAYLOAD_1k]
             ch1_data = convert_1_to_10(ch1_data)[:DISPLAY_SIZE]
             # Get the second half
@@ -90,6 +93,10 @@ def parse_data(data: List) -> [Iterable, Tuple]:
         case 20184:
             ch1_enb = True
             ch2_enb = True
+            # get the first half
+            ch1_data = data[DUAL_HEADER_10k_ch1:DUAL_HEADER_10k_ch1 + PAYLOAD_10k]
+            ch2_data = data[DATA_LENGTH[1]:]
+            ch2_data = ch2_data[DUAL_HEADER_10k_ch2:DUAL_HEADER_10k_ch2 + PAYLOAD_10k]
         case _:
             raise ValueError(f"Data is {len(data)} bytes long. It should be one of {DATA_LENGTH}")
 
@@ -134,7 +141,6 @@ def main():
                     # End of the packet
                     break
 
-            print(len(data))
             try:
                 (ch1_data, ch2_data), (ch1_enb, ch2_enb) = parse_data(data)
             except ValueError:
