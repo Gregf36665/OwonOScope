@@ -1,11 +1,13 @@
 import socket
-from typing import Tuple
+from typing import Tuple, Iterable, List
 
 from tkinter import simpledialog
 
+import matplotlib.axes._axes
 import matplotlib.pyplot as plt
 
 # For some reason there is noise at the start of the waveform
+# It's probably a header that needs to be decoded
 START = 250
 SAMPLES = 1125-START
 
@@ -26,6 +28,33 @@ def getConfig() -> Tuple[str, int]:
     if port is None:
         exit(0)
     return host, port
+
+
+def parse_data(data: List) -> [Iterable, Tuple]:
+    """
+    Parse the raw data into 2 channels
+    :param data: The raw stream of data, should be DATA_LENGTH long
+    :return: Tuple(Tuple[Ch1 data, Ch2 data], Tuple[Ch1 enabled, Ch2 enabled])
+    """
+    match len(data):
+        case 1125:
+            print("One Channel 1k")
+        case 10125:
+            print("One Channel 10k")
+        case 2184:
+            print("Two channel 1k")
+        case 20184:
+            print("Two channel 10k")
+        case _:
+            raise ValueError(f"Data is {len(data)} bytes long. It should be one of {DATA_LENGTH}")
+
+    return ([0] * SAMPLES, [50] * SAMPLES), (True, True)
+    pass
+
+
+def plot_data(line: matplotlib.axes._axes.Axes, visible: bool, data: Iterable):
+    line.set_visible(visible)
+    line.set_ydata(data)
 
 
 def main():
@@ -60,15 +89,18 @@ def main():
                     break
 
             print(len(data))
-            data = data[START:START+SAMPLES]
-            if not plt.fignum_exists(fig.number):
-                break
-            if len(data) == SAMPLES:
-                line1.set_ydata(data)
+            try:
+                (ch1_data, ch2_data), (ch1_enb, ch2_enb) = parse_data(data)
+            except ValueError:
+                pass
+            else:
+                # We have a valid packet
+                if not plt.fignum_exists(fig.number):
+                    break
+                plot_data(line1, ch1_enb, ch1_data)
+                plot_data(line2, ch2_enb, ch2_data)
                 fig.canvas.draw()
                 fig.canvas.flush_events()
-            else:
-                print(f"The data was only {len(data)} samples. Expected {SAMPLES}")
 
 
 if __name__ == '__main__':
