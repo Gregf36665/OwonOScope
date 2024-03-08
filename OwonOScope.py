@@ -20,7 +20,11 @@ def getConfig() -> Tuple[str, int]:
     :return: IP address, port
     """
     host = simpledialog.askstring("Host", "Enter the IP address", initialvalue="192.168.1.72")
+    if host is None:
+        exit(0)
     port = simpledialog.askinteger("Port", "Enter the port", initialvalue=3000)
+    if port is None:
+        exit(0)
     return host, port
 
 
