@@ -6,6 +6,9 @@ from tkinter import simpledialog
 import matplotlib.axes._axes
 import matplotlib.pyplot as plt
 
+
+__VERSION__ = "0.0.1"
+
 # For some reason there is noise at the start of the waveform
 # It's probably a header that needs to be decoded
 HEADER_1k = 228
